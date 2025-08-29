@@ -14,6 +14,10 @@ RUN pip install --no-cache-dir torch==2.8.0 --extra-index-url https://download.p
 # Install the rest of the dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Download the sentence-transformers model to prevent startup failures
+RUN python -c "from sentence_transformers import SentenceTransformer; \
+    SentenceTransformer('all-MiniLM-L6-v2')"
+
 # Copy the entire application code into the container
 COPY . .
 
