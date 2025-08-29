@@ -1,0 +1,6 @@
+# Ignore generated files and folders
+*.pkl
+*.index
+*.txt
+flask_session/
+.idea

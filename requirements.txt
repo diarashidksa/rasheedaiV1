@@ -6,3 +6,4 @@ pypdf2
 python-docx
 sentence-transformers
 faiss-cpu
+torch==2.8.0+cpu
