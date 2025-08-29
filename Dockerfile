@@ -5,8 +5,13 @@ FROM python:3.10-slim
 WORKDIR /usr/src/app
 
 # Copy the requirements file and install the dependencies
-# This step is done separately to leverage Docker's caching
+# This is done in two steps for a cleaner build
 COPY requirements.txt ./
+
+# Install PyTorch CPU-only
+RUN pip install --no-cache-dir torch==2.8.0 --extra-index-url https://download.pytorch.org/whl/cpu
+
+# Install the rest of the dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire application code into the container
@@ -16,5 +21,4 @@ COPY . .
 EXPOSE 8000
 
 # Define the command to start the application using Gunicorn
-
 CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "app:app"]
