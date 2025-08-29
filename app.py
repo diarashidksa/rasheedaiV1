@@ -23,13 +23,16 @@ if not openai.api_key:
     raise ValueError("OPENAI_API_KEY environment variable not set.")
 
 DATA_FOLDER = "data"
-INDEX_FILE = "faiss_index.index"
-MAPPING_FILE = "doc_mapping.pkl"
+DATA_FOLDER2 = "data2"
+# Change all file paths to use the DATA_FOLDER for write permissions
+INDEX_FILE = os.path.join(DATA_FOLDER2, "data2/faiss_index.index")
+MAPPING_FILE = os.path.join(DATA_FOLDER2, "data2/doc_mapping.pkl")
+EXCEL_LOG = os.path.join(DATA_FOLDER2, "data2/ChatLogs.xlsx")
+TIMESTAMP_FILE = os.path.join(DATA_FOLDER2, "data2/last_training_timestamp.txt")
+INDEX_REQUEST_FILE = os.path.join(DATA_FOLDER2, "start_indexing.txt")
+SYSTEM_PROMPT_FILE = "system_prompt.txt"  # This file is assumed to be in the root
+
 MODEL_NAME = "all-MiniLM-L6-v2"
-EXCEL_LOG = "ChatLogs.xlsx"
-TIMESTAMP_FILE = "last_training_timestamp.txt"
-INDEX_REQUEST_FILE = "start_indexing.txt"
-SYSTEM_PROMPT_FILE = "system_prompt.txt"
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -41,9 +44,9 @@ index = None
 documents_list = []
 doc_mapping = {}
 embedder = SentenceTransformer(MODEL_NAME)
-system_prompt = "You are a helpful assistant." # Default prompt in case file is not found
+system_prompt = "You are a helpful assistant."  # Default prompt in case file is not found
 
-# Functions remain unchanged
+
 def load_index_and_docs():
     global index, documents_list, doc_mapping
     print("Loading FAISS index and documents...")
@@ -61,6 +64,7 @@ def load_index_and_docs():
         documents_list = []
         doc_mapping = {}
 
+
 def load_system_prompt():
     global system_prompt
     try:
@@ -72,20 +76,24 @@ def load_system_prompt():
     except Exception as e:
         print(f"Error loading system prompt: {e}. Using default.")
 
-# Document Processing Functions (no change)
+
+# --- Document Processing Functions ---
 def load_txt(path):
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read().strip()
+
 
 def load_pdf(path):
     reader = PdfReader(path)
     texts = [page.extract_text().strip() for page in reader.pages if page.extract_text()]
     return "\n".join(texts)
 
+
 def load_docx(path):
     doc = Document(path)
     texts = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     return "\n".join(texts)
+
 
 def get_file_status():
     current_files = set(os.listdir(DATA_FOLDER))
@@ -99,18 +107,22 @@ def get_file_status():
             updated_files.add(filename)
     return new_files, updated_files, deleted_files
 
+
 def run_indexing_process():
     global index, documents_list, doc_mapping
+
     new_files, updated_files, deleted_files = get_file_status()
     if not new_files and not updated_files and not deleted_files:
         print("🔄 No changes detected. Index is up-to-date.")
         if os.path.exists(INDEX_REQUEST_FILE):
             os.remove(INDEX_REQUEST_FILE)
         return
+
     if deleted_files:
         print(f"🗑️ Deleting {len(deleted_files)} documents from the index.")
         for filename in deleted_files:
             del doc_mapping[filename]
+
     files_to_index = new_files | updated_files
     if files_to_index:
         print(f"Indexing {len(files_to_index)} new or updated documents...")
@@ -133,14 +145,17 @@ def run_indexing_process():
                     new_docs_mapping[filename] = {'content': content, 'mtime': os.path.getmtime(file_path)}
             except Exception as e:
                 print(f"❌ Error processing {filename} due to error: {e}. Skipping.")
+
         if new_docs_content:
             doc_mapping.update(new_docs_mapping)
+
     print("Rebuilding FAISS index...")
     index = faiss.IndexFlatL2(embedder.get_sentence_embedding_dimension())
     all_docs_content = [item['content'] for item in doc_mapping.values()]
     if all_docs_content:
         all_embeddings = embedder.encode(all_docs_content, convert_to_numpy=True)
         index.add(all_embeddings)
+
     faiss.write_index(index, INDEX_FILE)
     with open(MAPPING_FILE, "wb") as f:
         pickle.dump(doc_mapping, f)
@@ -152,6 +167,7 @@ def run_indexing_process():
     if os.path.exists(INDEX_REQUEST_FILE):
         os.remove(INDEX_REQUEST_FILE)
 
+
 def worker_thread():
     while True:
         if os.path.exists(INDEX_REQUEST_FILE):
@@ -160,15 +176,7 @@ def worker_thread():
             load_index_and_docs()
         time.sleep(5)
 
-# Initialize application data when the app starts. This is done outside the __main__ block
-# so that it runs when Gunicorn imports the app.
-if not os.path.exists(DATA_FOLDER):
-    os.makedirs(DATA_FOLDER)
-load_index_and_docs()
-load_system_prompt()
-threading.Thread(target=worker_thread, daemon=True).start()
 
-# Rest of the functions (init_excel, log_to_excel, search_docs, etc.) remain unchanged
 def init_excel():
     if not os.path.exists(EXCEL_LOG):
         wb = Workbook()
@@ -177,7 +185,6 @@ def init_excel():
         ws.append(["Session ID", "Date", "Time", "IP Address", "User Message", "Bot Response"])
         wb.save(EXCEL_LOG)
 
-init_excel()
 
 def log_to_excel(session_id, ip, user_msg, bot_resp):
     try:
@@ -191,12 +198,14 @@ def log_to_excel(session_id, ip, user_msg, bot_resp):
     except Exception as e:
         print(f"Failed to log to Excel: {e}")
 
+
 def search_docs(query, top_k=3):
     if not index: return "No documents are indexed. Please run the indexing script."
     query_vec = embedder.encode([query])
     D, I = index.search(query_vec, top_k)
     results = [documents_list[i] for i in I[0] if i < len(documents_list)]
     return "\n".join(results)
+
 
 @app.before_request
 def make_session_permanent():
@@ -206,9 +215,11 @@ def make_session_permanent():
     if "chat_history" not in session:
         session["chat_history"] = []
 
+
 @app.route("/")
 def home():
-    return render_template("index.html", chat_history=session.get("chat_history", []))
+    return render_template("indexn.html", chat_history=session.get("chat_history", []))
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -234,11 +245,13 @@ def chat():
     log_to_excel(session["session_id"], user_ip, user_message, bot_reply)
     return jsonify({"reply": bot_reply})
 
+
 @app.route("/reset", methods=["POST"])
 def reset_chat():
     session["chat_history"] = []
     session.modified = True
     return jsonify({"status": "reset"})
+
 
 @app.route('/training')
 def training_dashboard():
@@ -256,11 +269,13 @@ def training_dashboard():
     last_trained = get_last_training_timestamp()
     return render_template('training.html', files=files, last_trained=last_trained)
 
+
 def get_last_training_timestamp():
     if os.path.exists(TIMESTAMP_FILE):
         with open(TIMESTAMP_FILE, "r") as f:
             return f.read().strip()
     return "N/A"
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -271,11 +286,13 @@ def upload_file():
         file.save(os.path.join(DATA_FOLDER, file.filename))
         return redirect(url_for('training_dashboard'))
 
+
 @app.route('/delete/<filename>')
 def delete_file(filename):
     file_path = os.path.join(DATA_FOLDER, filename)
     if os.path.exists(file_path): os.remove(file_path)
     return redirect(url_for('training_dashboard'))
+
 
 @app.route('/delete_all')
 def delete_all_files():
@@ -287,6 +304,7 @@ def delete_all_files():
     if os.path.exists(TIMESTAMP_FILE): os.remove(TIMESTAMP_FILE)
     if os.path.exists(INDEX_REQUEST_FILE): os.remove(INDEX_REQUEST_FILE)
     return redirect(url_for('training_dashboard'))
+
 
 @app.route('/train')
 def train_indexing():
@@ -300,12 +318,21 @@ def train_indexing():
     except Exception as e:
         return jsonify({'error': f'Failed to start indexing: {e}'}), 500
 
+
 @app.route('/check_status')
 def check_status():
     if os.path.exists(INDEX_REQUEST_FILE):
         return jsonify({'status': 'in_progress'})
     else:
         return jsonify({'status': 'completed', 'last_trained': get_last_training_timestamp()})
+
+
+# This is the code that is executed when Gunicorn starts the application.
+if not os.path.exists(DATA_FOLDER):
+    os.makedirs(DATA_FOLDER)
+load_index_and_docs()
+load_system_prompt()
+threading.Thread(target=worker_thread, daemon=True).start()
 
 # This block is only for local development. Gunicorn will not execute it.
 if __name__ == '__main__':
