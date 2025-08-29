@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rasheed.AI Chatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="{{ url_for('static', filename='brand.png') }}">
+    <!-- Updated font link to include 'Cairo' for elegant Arabic support -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /*
+         * CSS Variables for a clean, maintainable color palette
+         */
+        :root {
+            --primary-red: #DA291C;
+            --secondary-yellow: #FFC000;
+            --background-dark: #121212;
+            --surface-card: #1E1E1E;
+            --text-light: #E0E0E0;
+            --text-faded: #9E9E9E;
+        }
+
+        /*
+         * Main body styling
+         */
+        body {
+            /* Changed font-family to prioritize Cairo for Arabic, with Poppins as a fallback */
+            font-family: 'Cairo', 'Poppins', sans-serif;
+            background: var(--background-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /*
+         * Chat container for the main application area
+         */
+        .chat-container {
+            width: 90%;
+            max-width: 700px;
+            margin: 40px auto;
+            background: var(--surface-card);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            /* Adaptive design */
+            box-sizing: border-box;
+        }
+
+        /*
+         * Top bar containing the logo, title, and "New Chat" button
+         */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-title img {
+            height: 40px;
+            margin-right: 15px;
+        }
+
+        .top-bar h2 {
+            font-weight: 600;
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-light);
+        }
+
+        .top-bar button {
+            background: none;
+            color: var(--text-light);
+            border: 1px solid var(--primary-red);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+            font-weight: 500;
+        }
+
+        .top-bar button:hover {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        /*
+         * Main chat message area
+         */
+        .chat-box {
+            height: 500px;
+            overflow-y: auto;
+            border: none;
+            padding: 10px;
+            background: transparent;
+            flex-grow: 1;
+        }
+
+        /* Custom scrollbar for a polished look */
+        .chat-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background-color: #555;
+            border-radius: 4px;
+        }
+
+        /*
+         * Individual message styling
+         */
+        .message {
+            margin: 15px 0;
+            padding: 12px 18px;
+            border-radius: 25px;
+            max-width: 85%;
+            line-height: 1.6;
+            word-wrap: break-word;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        /* User message styling */
+        .user {
+            background: var(--primary-red);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+            font-weight: 500;
+        }
+
+        /* Bot message styling */
+        .bot {
+            background: #2A2A2A;
+            color: var(--text-light);
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        /*
+         * Input area styling
+         */
+        .input-area {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            background: #252525;
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .input-area input::placeholder {
+            color: var(--text-faded);
+        }
+
+        .input-area button {
+            background: var(--primary-red);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .input-area button:hover {
+            background: #A01F16;
+        }
+
+        /*
+         * Loading indicator styling
+         */
+        .loading {
+            display: none;
+            font-style: italic;
+            color: var(--text-faded);
+            margin-top: 10px;
+            text-align: left; /* Changed alignment for better icon placement */
+            padding-left: 15px; /* Added padding */
+        }
+
+        .dots-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-faded);
+            border-radius: 50%;
+            animation: pulse 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        /*
+         * "Powered by" footer styling
+         */
+        .powered-by {
+            text-align: center;
+            margin-top: 20px;
+            padding-bottom: 20px;
+            font-size: 0.8rem;
+            color: var(--text-faded);
+        }
+
+        .powered-by a {
+            color: var(--secondary-yellow);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .powered-by a:hover {
+            color: var(--primary-red);
+        }
+
+        /*
+         * Responsive design for smaller screens
+         */
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 95%;
+                margin: 20px auto;
+                padding: 20px;
+            }
+        }
+
+        /*
+         * Simple fade-in animation for messages
+         */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animation for the pulsing typing indicator */
+        @keyframes pulse {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="top-bar">
+        <div class="logo-title">
+            <!--
+                NOTE: The path has been updated to point to the 'static' folder.
+            -->
+            <img src="{{ url_for('static', filename='brand.png') }}" alt="Rasheed.AI Logo">
+            <h2>Rasheed.AI</h2>
+        </div>
+        <button onclick="resetChat()">New Chat</button>
+    </div>
+    <div id="chat-box" class="chat-box">
+        <!-- Initial welcome message for the bot -->
+        <div class="message bot">مرحبا! أنا المساعد الذكي . كيف يمكنني مساعدتك اليوم؟</div>
+        <!-- The backend will inject chat messages here -->
+        {% for msg in chat_history %}
+            <div class="message {{ msg.role }}">{{ msg.text }}</div>
+        {% endfor %}
+    </div>
+    <!-- Updated loading indicator -->
+    <div class="loading" id="loading">
+        <div class="dots-container">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter'){sendMessage()}">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<div class="powered-by">
+    Powered by <a href="http://www.rasheed.ai" target="_blank">www.rasheed.ai</a>
+</div>
+
+<script>
+function scrollToBottom() {
+    const chatBox = document.getElementById("chat-box");
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+    const input = document.getElementById("user-input");
+    const message = input.value.trim();
+    if (!message) return;
+
+    // Show user message instantly
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML += `<div class="message user">${message}</div>`;
+    input.value = "";
+    scrollToBottom();
+
+    // Show loading animation
+    document.getElementById("loading").style.display = "flex"; // Changed from 'block' to 'flex'
+
+    const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+    });
+    const data = await response.json();
+
+    document.getElementById("loading").style.display = "none";
+    chatBox.innerHTML += `<div class="message bot">${data.reply}</div>`;
+    scrollToBottom();
+}
+
+async function resetChat() {
+    await fetch("/reset", { method: "POST" });
+    document.getElementById("chat-box").innerHTML = "";
+}
+window.onload = scrollToBottom;
+</script>
+</body>
+</html>

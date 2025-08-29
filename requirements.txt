@@ -1,0 +1,8 @@
+flask
+flask_session
+openai
+openpyxl
+pypdf2
+python-docx
+sentence-transformers
+faiss-cpu
