@@ -118,10 +118,13 @@
                     {% endfor %}
                 </tbody>
             </table>
+            <div class="text-center mt-4">
+                <a href="{{ url_for('download_logs') }}" class="btn btn-green">Download Chat Logs</a>
+            </div>
         </div>
-        <div class="footer">
-            Powered by <a href="http://www.rasheed.ai" style="color: #ffffff; text-decoration: none;">www.rasheed.ai</a>
-        </div>
+    </div>
+    <div class="footer">
+        Powered by <a href="http://www.rasheed.ai" style="color: #ffffff; text-decoration: none;">www.rasheed.ai</a>
     </div>
     <script>
         let intervalId = null;
