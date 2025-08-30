@@ -24,11 +24,13 @@ if not openai.api_key:
 
 DATA_FOLDER = "data"
 DATA_FOLDER2 = "data2"
-# Change all file paths to use the DATA_FOLDER for write permissions
-INDEX_FILE = os.path.join(DATA_FOLDER2, "data2/faiss_index.index")
-MAPPING_FILE = os.path.join(DATA_FOLDER2, "data2/doc_mapping.pkl")
-EXCEL_LOG = os.path.join(DATA_FOLDER2, "data2/ChatLogs.xlsx")
-TIMESTAMP_FILE = os.path.join(DATA_FOLDER2, "data2/last_training_timestamp.txt")
+
+# CORRECTED: Change all file paths to use the DATA_FOLDER2 for write permissions.
+# The "data2/" prefix is no longer needed inside the string.
+INDEX_FILE = os.path.join(DATA_FOLDER2, "faiss_index.index")
+MAPPING_FILE = os.path.join(DATA_FOLDER2, "doc_mapping.pkl")
+EXCEL_LOG = os.path.join(DATA_FOLDER2, "ChatLogs.xlsx")
+TIMESTAMP_FILE = os.path.join(DATA_FOLDER2, "last_training_timestamp.txt")
 INDEX_REQUEST_FILE = os.path.join(DATA_FOLDER2, "start_indexing.txt")
 SYSTEM_PROMPT_FILE = "system_prompt.txt"  # This file is assumed to be in the root
 
@@ -44,7 +46,7 @@ index = None
 documents_list = []
 doc_mapping = {}
 embedder = SentenceTransformer(MODEL_NAME)
-system_prompt = "You are a helpful assistant."  # Default prompt in case file is not found
+system_prompt = "You are a helpful assistant."
 
 
 def load_index_and_docs():
@@ -218,7 +220,7 @@ def make_session_permanent():
 
 @app.route("/")
 def home():
-    return render_template("indexn.html", chat_history=session.get("chat_history", []))
+    return render_template("index.html", chat_history=session.get("chat_history", []))
 
 
 @app.route("/chat", methods=["POST"])
@@ -234,7 +236,7 @@ def chat():
         completion = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": system_prompt},  # Using the loaded system prompt
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ]
         )
