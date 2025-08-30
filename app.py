@@ -22,15 +22,16 @@ if not openai.api_key:
     # This will prevent the app from starting if the key is missing
     raise ValueError("OPENAI_API_KEY environment variable not set.")
 
-# Use a single, consistent variable for the data folder
-DATA_FOLDER = "data2"
+# Correctly define the folders based on your description
+DATA_FOLDER = "data"    # This folder is for documents to be trained
+DATA_FOLDER2 = "data2"  # This folder is for the generated index files and logs
 
-# Corrected file paths to use the new DATA_FOLDER
-INDEX_FILE = os.path.join(DATA_FOLDER, "faiss_index.index")
-MAPPING_FILE = os.path.join(DATA_FOLDER, "doc_mapping.pkl")
-EXCEL_LOG = os.path.join(DATA_FOLDER, "ChatLogs.xlsx")
-TIMESTAMP_FILE = os.path.join(DATA_FOLDER, "last_training_timestamp.txt")
-INDEX_REQUEST_FILE = os.path.join(DATA_FOLDER, "start_indexing.txt")
+# Corrected file paths to use the new DATA_FOLDER2
+INDEX_FILE = os.path.join(DATA_FOLDER2, "faiss_index.index")
+MAPPING_FILE = os.path.join(DATA_FOLDER2, "doc_mapping.pkl")
+EXCEL_LOG = os.path.join(DATA_FOLDER2, "ChatLogs.xlsx")
+TIMESTAMP_FILE = os.path.join(DATA_FOLDER2, "last_training_timestamp.txt")
+INDEX_REQUEST_FILE = os.path.join(DATA_FOLDER2, "start_indexing.txt")
 SYSTEM_PROMPT_FILE = "system_prompt.txt"
 
 MODEL_NAME = "all-MiniLM-L6-v2"
@@ -97,6 +98,7 @@ def load_docx(path):
 
 
 def get_file_status():
+    # This function now correctly lists files from the 'data' folder
     current_files = set(os.listdir(DATA_FOLDER))
     known_files = set(doc_mapping.keys())
     new_files = current_files - known_files
@@ -232,7 +234,7 @@ def chat():
         bot_reply = context
     else:
         prompt = f"Context:\n{context}\n\nQuestion: {user_message}\nAnswer:"
-        completion = openai.chat.completions.create(
+        completion = openai.chat.com.pletions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
