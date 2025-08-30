@@ -251,7 +251,7 @@ def chat():
             bot_reply = "I'm sorry, I cannot answer that question. It appears to be outside of my trained knowledge."
         else:
             # Step 2: If the context is relevant, generate the final answer
-            # Use a single, flexible prompt to handle all types of questions
+            # This is the single, flexible prompt to handle all questions
             prompt = f"Context:\n{context}\n\nQuestion: {user_message}\nAnswer:"
             completion = openai.chat.completions.create(
                 model="gpt-4o-mini",
