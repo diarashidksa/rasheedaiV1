@@ -234,7 +234,7 @@ def chat():
         bot_reply = context
     else:
         prompt = f"Context:\n{context}\n\nQuestion: {user_message}\nAnswer:"
-        completion = openai.chat.com.pletions.create(
+        completion = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
