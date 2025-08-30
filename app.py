@@ -13,7 +13,7 @@ from docx import Document
 import time
 import threading
 
-# ===== CONFIG & INITIALIZATION ======
+# ====== CONFIG & INITIALIZATION ======
 # Use environment variable for the API key for security
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -22,17 +22,16 @@ if not openai.api_key:
     # This will prevent the app from starting if the key is missing
     raise ValueError("OPENAI_API_KEY environment variable not set.")
 
-DATA_FOLDER = "data"
-DATA_FOLDER2 = "data2"
+# Use a single, consistent variable for the data folder
+DATA_FOLDER = "data2"
 
-# CORRECTED: Change all file paths to use the DATA_FOLDER2 for write permissions.
-# The "data2/" prefix is no longer needed inside the string.
-INDEX_FILE = os.path.join(DATA_FOLDER2, "faiss_index.index")
-MAPPING_FILE = os.path.join(DATA_FOLDER2, "doc_mapping.pkl")
-EXCEL_LOG = os.path.join(DATA_FOLDER2, "ChatLogs.xlsx")
-TIMESTAMP_FILE = os.path.join(DATA_FOLDER2, "last_training_timestamp.txt")
-INDEX_REQUEST_FILE = os.path.join(DATA_FOLDER2, "start_indexing.txt")
-SYSTEM_PROMPT_FILE = "system_prompt.txt"  # This file is assumed to be in the root
+# Corrected file paths to use the new DATA_FOLDER
+INDEX_FILE = os.path.join(DATA_FOLDER, "faiss_index.index")
+MAPPING_FILE = os.path.join(DATA_FOLDER, "doc_mapping.pkl")
+EXCEL_LOG = os.path.join(DATA_FOLDER, "ChatLogs.xlsx")
+TIMESTAMP_FILE = os.path.join(DATA_FOLDER, "last_training_timestamp.txt")
+INDEX_REQUEST_FILE = os.path.join(DATA_FOLDER, "start_indexing.txt")
+SYSTEM_PROMPT_FILE = "system_prompt.txt"
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 
