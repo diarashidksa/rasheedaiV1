@@ -245,15 +245,31 @@ def chat():
     if "No documents" in context:
         bot_reply = context
     else:
-        prompt = f"Context:\n{context}\n\nQuestion: {user_message}\nAnswer:"
-        completion = openai.chat.completions.create(
+        # Step 1: Check if the context is relevant to the user's question
+        relevance_prompt = f"Given the following context, can you answer the question? Answer 'Yes' or 'No'.\n\nContext:\n{context}\n\nQuestion: {user_message}\n\nAnswer:"
+        relevance_check = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": "You are a helpful assistant that only answers 'Yes' or 'No'."},
+                {"role": "user", "content": relevance_prompt}
             ]
         )
-        bot_reply = completion.choices[0].message.content.strip()
+        is_relevant = relevance_check.choices[0].message.content.strip().lower()
+
+        if is_relevant == "no":
+            bot_reply = "I'm sorry, I cannot answer that question. It appears to be outside of my trained knowledge."
+        else:
+            # Step 2: If the context is relevant, generate the final answer
+            prompt = f"Context:\n{context}\n\nQuestion: {user_message}\nAnswer:"
+            completion = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            bot_reply = completion.choices[0].message.content.strip()
+
     session["chat_history"].append({"role": "bot", "text": bot_reply})
     session.modified = True
     user_ip = request.remote_addr or "unknown"
