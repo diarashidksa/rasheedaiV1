@@ -13,7 +13,7 @@ from docx import Document
 import time
 import threading
 
-# ====== CONFIG & INITIALIZATION ======
+# ===== CONFIG & INITIALIZATION ======
 # Use environment variable for the API key for security
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
