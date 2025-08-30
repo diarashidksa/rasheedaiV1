@@ -23,7 +23,7 @@ if not openai.api_key:
     raise ValueError("OPENAI_API_KEY environment variable not set.")
 
 # Correctly define the folders based on your description
-DATA_FOLDER = "data"    # This folder is for documents to be trained
+DATA_FOLDER = "data"  # This folder is for documents to be trained
 DATA_FOLDER2 = "data2"  # This folder is for the generated index files and logs
 
 # Corrected file paths to use the new DATA_FOLDER2
@@ -204,6 +204,10 @@ def log_to_excel(session_id, ip, user_msg, bot_resp):
 
 def search_docs(query, top_k=3):
     if not index: return "No documents are indexed. Please run the indexing script."
+    # Add a check to prevent IndexError
+    if not documents_list:
+        return "No documents are indexed. Please run the indexing script."
+
     query_vec = embedder.encode([query])
     D, I = index.search(query_vec, top_k)
     results = [documents_list[i] for i in I[0] if i < len(documents_list)]
@@ -236,31 +240,35 @@ def chat():
     if "No documents" in context:
         bot_reply = context
     else:
-        # Step 1: Check if the context is relevant to the user's question
-        relevance_prompt = f"Given the following context, can you answer the question? Answer 'Yes' or 'No'.\n\nContext:\n{context}\n\nQuestion: {user_message}\n\nAnswer:"
-        relevance_check = openai.chat.completions.create(
+        # Step 1: Combine the user's message, context, and system prompt into a single request
+        # The prompt is now flexible enough to handle greetings and document queries
+        prompt = f"""
+        You are a helpful and friendly AI assistant.
+
+        Your primary role is to answer questions based on the provided documents.
+
+        If a user asks a general question like 'Hi' or 'How are you?', respond in a friendly and conversational way. If they ask about your role or purpose, explain that you are an AI assistant designed to answer questions based on a set of uploaded documents.
+
+        For all other questions, use the following context to provide a concise and accurate answer. If the context does not contain the answer, state that the information is outside of your trained knowledge.
+
+        If the user asks to perform a creative task like 'build a proposal,' act as a professional proposal writer and use the provided context as building blocks. Do not invent information.
+
+        Context:
+        ---
+        {context}
+        ---
+
+        Question: {user_message}
+        """
+
+        completion = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant that only answers 'Yes' or 'No'."},
-                {"role": "user", "content": relevance_prompt}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
             ]
         )
-        is_relevant = relevance_check.choices[0].message.content.strip().lower()
-
-        if is_relevant == "no":
-            bot_reply = "I'm sorry, I cannot answer that question. It appears to be outside of my trained knowledge."
-        else:
-            # Step 2: If the context is relevant, generate the final answer
-            # This is the single, flexible prompt to handle all questions
-            prompt = f"Context:\n{context}\n\nQuestion: {user_message}\nAnswer:"
-            completion = openai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            bot_reply = completion.choices[0].message.content.strip()
+        bot_reply = completion.choices[0].message.content.strip()
 
     session["chat_history"].append({"role": "bot", "text": bot_reply})
     session.modified = True
