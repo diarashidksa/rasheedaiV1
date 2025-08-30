@@ -4,8 +4,8 @@ FROM python:3.10-slim
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Create the data directory and set permissions
-RUN mkdir -p data2 && chmod -R 777 data2
+# Create the data and flask_session directories and set permissions
+RUN mkdir -p data flask_session && chmod -R 777 data flask_session
 
 # Copy the requirements file and install the dependencies
 # This is done in two steps for a cleaner build
@@ -28,4 +28,5 @@ COPY . .
 EXPOSE 8000
 
 # Define the command to start the application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "app:app"]
+# Use the shell form to correctly evaluate the $PORT variable
+CMD gunicorn --bind 0.0.0.0:$PORT app:app
