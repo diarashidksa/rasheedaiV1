@@ -4,7 +4,7 @@ import uuid
 import pickle
 import faiss
 import openai
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from flask_session import Session
 from sentence_transformers import SentenceTransformer
 from openpyxl import Workbook, load_workbook
@@ -204,7 +204,7 @@ def log_to_excel(session_id, ip, user_msg, bot_resp):
 
 def search_docs(query, top_k=3):
     if not index: return "No documents are indexed. Please run the indexing script."
-    # Add a check to prevent IndexError
+    # Fix the IndexError by checking if documents_list is empty
     if not documents_list:
         return "No documents are indexed. Please run the indexing script."
 
@@ -240,10 +240,9 @@ def chat():
     if "No documents" in context:
         bot_reply = context
     else:
-        # Step 1: Combine the user's message, context, and system prompt into a single request
-        # The prompt is now flexible enough to handle greetings and document queries
+        # This is the single, flexible prompt to handle all questions
         prompt = f"""
-        You are a helpful and friendly AI assistant.
+        You are a helpful and friendly AI assistant. You must respond in the same language as the user's query.
 
         Your primary role is to answer questions based on the provided documents.
 
@@ -358,9 +357,20 @@ def check_status():
         return jsonify({'status': 'completed', 'last_trained': get_last_training_timestamp()})
 
 
+# New route to download the chat logs
+from flask import send_file
+
+
+@app.route('/download_logs')
+def download_logs():
+    return send_file(EXCEL_LOG, as_attachment=True)
+
+
 # This is the code that is executed when Gunicorn starts the application.
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
+if not os.path.exists(DATA_FOLDER2):
+    os.makedirs(DATA_FOLDER2)
 load_index_and_docs()
 load_system_prompt()
 threading.Thread(target=worker_thread, daemon=True).start()
