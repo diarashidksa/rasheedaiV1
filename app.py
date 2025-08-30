@@ -23,7 +23,7 @@ if not openai.api_key:
     raise ValueError("OPENAI_API_KEY environment variable not set.")
 
 # Correctly define the folders based on your description
-DATA_FOLDER = "data"    # This folder is for documents to be trained
+DATA_FOLDER = "data"  # This folder is for documents to be trained
 DATA_FOLDER2 = "data2"  # This folder is for the generated index files and logs
 
 # Corrected file paths to use the new DATA_FOLDER2
@@ -228,6 +228,18 @@ def home():
 def chat():
     user_message = request.json.get("message")
     if not user_message: return jsonify({"error": "No message provided"}), 400
+
+    # Simple check for conversational greetings
+    greetings = ["hi", "hello", "hey"]
+    if user_message.lower() in greetings:
+        bot_reply = "Hello there! How can I help you today?"
+        session["chat_history"].append({"role": "user", "text": user_message})
+        session["chat_history"].append({"role": "bot", "text": bot_reply})
+        session.modified = True
+        user_ip = request.remote_addr or "unknown"
+        log_to_excel(session["session_id"], user_ip, user_message, bot_reply)
+        return jsonify({"reply": bot_reply})
+
     session["chat_history"].append({"role": "user", "text": user_message})
     context = search_docs(user_message)
     if "No documents" in context:
